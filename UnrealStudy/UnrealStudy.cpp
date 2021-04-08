@@ -4,4 +4,6 @@
 #include "Modules/ModuleManager.h"
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, UnrealStudy, "UnrealStudy" );
+
+DEFINE_LOG_CATEGORY(UnrealStudy);
  
