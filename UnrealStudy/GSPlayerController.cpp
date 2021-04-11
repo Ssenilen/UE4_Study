@@ -3,6 +3,15 @@
 
 #include "GSPlayerController.h"
 
+
+void AGSPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FInputModeGameOnly InputMode;
+	SetInputMode(InputMode);
+}
+
 void AGSPlayerController::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();

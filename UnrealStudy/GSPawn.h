@@ -3,6 +3,7 @@
 #pragma once
 
 #include "UnrealStudy.h"
+#include "GameFramework/FloatingPawnMovement.h"
 #include "GameFramework/Pawn.h"
 #include "GSPawn.generated.h"
 
@@ -14,6 +15,11 @@ class UNREALSTUDY_API AGSPawn : public APawn
 public:
 	// Sets default values for this pawn's properties
 	AGSPawn();
+
+private:
+	void UpDown(float NewAxisValue);
+	void LeftRight(float NewAxisValue);
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -29,4 +35,18 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	UPROPERTY(VisibleAnywhere, Category = Collision)
+		UCapsuleComponent* pCapsule;
+	
+	UPROPERTY(VisibleAnywhere, Category = Visual)
+		USkeletalMeshComponent* pSkeletalMesh;
+
+	UPROPERTY(VisibleAnywhere, Category = Movement)
+		UFloatingPawnMovement* pMovement;
+
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+		USpringArmComponent* pSpringArm;
+
+	UPROPERTY(VisibleAnywhere, Category = Camera)
+		UCameraComponent* pCamera;
 };

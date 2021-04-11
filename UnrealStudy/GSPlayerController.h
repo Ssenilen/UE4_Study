@@ -14,6 +14,9 @@ class UNREALSTUDY_API AGSPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 	
+protected:
+	virtual void BeginPlay() override;
+
 public:
 	virtual void PostInitializeComponents() override;
 	virtual void OnPossess(APawn* PawnToPossess) override;
