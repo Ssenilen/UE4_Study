@@ -2,12 +2,12 @@
 
 
 #include "GSGameMode.h"
-#include "GSPawn.h"
+#include "GSCharacter.h"
 #include "GSPlayerController.h"
 
 AGSGameMode::AGSGameMode()
 {
-	DefaultPawnClass = AGSPawn::StaticClass();
+	DefaultPawnClass = AGSCharacter::StaticClass();
 	PlayerControllerClass = AGSPlayerController::StaticClass();
 }
 
