@@ -2,6 +2,7 @@
 
 
 #include "GSCharacter.h"
+#include "GSAnimInstance.h"
 
 // Sets default values
 AGSCharacter::AGSCharacter()
@@ -35,6 +36,12 @@ AGSCharacter::AGSCharacter()
 	ArmLengthSpeed = 3.0f;
 	ArmRotationSpeed = 10.0f;
 	ModeChangeTime = 3.0f;
+	IsAttacking = false;
+
+	MaxCombo = 3;
+	AttackEndComboState();
+
+	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
 	SetControlMode(EControlMode::DIABLO);
 }
@@ -79,6 +86,32 @@ void AGSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AGSCharacter::LookUp);
 	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AGSCharacter::Turn);
 	PlayerInputComponent->BindAction(TEXT("ViewChange"), EInputEvent::IE_Pressed, this, &AGSCharacter::ViewChange);
+	PlayerInputComponent->BindAction(TEXT("Jump"), EInputEvent::IE_Pressed, this, &AGSCharacter::Jump);
+	PlayerInputComponent->BindAction(TEXT("Attack"), EInputEvent::IE_Pressed, this, &AGSCharacter::Attack);
+}
+
+void AGSCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	AnimInstance = Cast<UGSAnimInstance>(GetMesh()->GetAnimInstance());
+	checkf(AnimInstance);
+	
+	if (AnimInstance)
+	{
+		AnimInstance->OnMontageEnded.AddDynamic(this, &AGSCharacter::OnAttackMontageEnded);
+
+		AnimInstance->OnNextAttackCheck.AddLambda([this]() {
+			CanNextCombo = false;
+
+			if (IsComboInputOn)
+			{
+				AttackStartComboState();
+				AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+			}
+		});
+	}
+
 }
 
 void AGSCharacter::SetControlMode(EControlMode ControlMode)
@@ -179,6 +212,45 @@ void AGSCharacter::ViewChange()
 		SetControlMode(EControlMode::DIABLO);
 		//GetController()->SetControlRotation(pSpringArm->GetRelativeRotation());
 	}
+}
+
+void AGSCharacter::Attack()
+{
+	if (IsAttacking)
+	{
+		if (CanNextCombo)
+			IsComboInputOn = true;
+	}
+	else
+	{
+		checkf(CurrentCombo == 0);
+		AttackStartComboState();
+		AnimInstance->PlayAttackMontage();
+		AnimInstance->JumpToAttackMontageSection(CurrentCombo);
+		IsAttacking = true;
+	}
+}
+
+void AGSCharacter::AttackStartComboState()
+{
+	CanNextCombo = true;
+	IsComboInputOn = false;
+	checkf(FMath::IsWithinInclusive<int32>(CurrentCombo, 0, MaxCombo - 1));
+	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
+}
+
+void AGSCharacter::AttackEndComboState()
+{
+	CanNextCombo = false;
+	IsComboInputOn = false;
+	CurrentCombo = 0;
+}
+
+void AGSCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	checkf(IsAttacking && CurrentCombo > 0);
+	IsAttacking = false;
+	AttackEndComboState();
 }
 
 
