@@ -3,6 +3,7 @@
 
 #include "GSCharacter.h"
 #include "GSAnimInstance.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 AGSCharacter::AGSCharacter()
@@ -44,6 +45,11 @@ AGSCharacter::AGSCharacter()
 	GetCharacterMovement()->JumpZVelocity = 800.0f;
 
 	SetControlMode(EControlMode::DIABLO);
+
+	GetCapsuleComponent()->SetCollisionProfileName(TEXT("GSCharacter"));
+
+	AttackRange = 200.0f;
+	AttackRadius = 50.0f;
 }
 
 // Called when the game starts or when spawned
@@ -112,6 +118,22 @@ void AGSCharacter::PostInitializeComponents()
 		});
 	}
 
+	AnimInstance->OnAttackHitCheck.AddUObject(this, &AGSCharacter::AttackCheck);
+}
+
+float AGSCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	debugf(TEXT("Actor %s took Damage: %f"), *GetName(), FinalDamage);
+
+	if (FinalDamage > 0.0f)
+	{
+		AnimInstance->SetDeadAnim();
+		SetActorEnableCollision(false);
+	}
+
+	return FinalDamage;
 }
 
 void AGSCharacter::SetControlMode(EControlMode ControlMode)
@@ -228,6 +250,49 @@ void AGSCharacter::Attack()
 		AnimInstance->PlayAttackMontage();
 		AnimInstance->JumpToAttackMontageSection(CurrentCombo);
 		IsAttacking = true;
+	}
+}
+
+void AGSCharacter::AttackCheck()
+{
+	FHitResult HitResult;
+	FCollisionQueryParams Params(NAME_None, false, this);
+	bool bResult = GetWorld()->SweepSingleByChannel(
+		HitResult,
+		GetActorLocation(),
+		GetActorLocation() + GetActorForwardVector() * AttackRange,
+		FQuat::Identity,
+		ECollisionChannel::ECC_GameTraceChannel2,
+		FCollisionShape::MakeSphere(AttackRadius),
+		Params);
+
+
+#if ENABLE_DRAW_DEBUG
+	FVector TraceVec = GetActorForwardVector() * AttackRange;
+	FVector Center = GetActorLocation() + TraceVec * 0.5f;
+	float HalfHeight = AttackRange * 0.5f + AttackRadius;
+	FQuat CapsuleRot = FRotationMatrix::MakeFromZ(TraceVec).ToQuat();
+	FColor DrawColor = bResult ? FColor::Green : FColor::Red;
+	float DebugLifeTime = 3.0f;
+
+	DrawDebugCapsule(GetWorld(),
+		Center,
+		HalfHeight,
+		AttackRadius,
+		CapsuleRot,
+		DrawColor,
+		false,
+		DebugLifeTime);
+#endif
+	if (bResult)
+	{
+		if (HitResult.Actor.IsValid())
+		{
+			debugf(TEXT("Hit Success!"));
+
+			FDamageEvent DamageEvent;
+			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+		}
 	}
 }
 
