@@ -3,6 +3,7 @@
 
 #include "GSCharacter.h"
 #include "GSAnimInstance.h"
+#include "GSWeapon.h"
 #include "DrawDebugHelpers.h"
 
 // Sets default values
@@ -34,6 +35,19 @@ AGSCharacter::AGSCharacter()
 		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 	}
 
+	//FName WeaponSocket(TEXT("hand_rSocket"));
+	//if (GetMesh()->DoesSocketExist(WeaponSocket))
+	//{
+	//	pWeapon = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("WEAPON"));
+	//	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Blade_BlackKnight(TEXT("/Game/InfinityBladeWeapons/Weapons/Blade/Swords/Blade_BlackKnight/SK_Blade_BlackKnight.SK_Blade_BlackKnight"));
+	//	if (SK_Blade_BlackKnight.Succeeded())
+	//	{
+	//		pWeapon->SetSkeletalMesh(SK_Blade_BlackKnight.Object);
+	//	}
+
+	//	pWeapon->SetupAttachment(GetMesh(), WeaponSocket);
+	//}
+
 	ArmLengthSpeed = 3.0f;
 	ArmRotationSpeed = 10.0f;
 	ModeChangeTime = 3.0f;
@@ -56,7 +70,14 @@ AGSCharacter::AGSCharacter()
 void AGSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	//FName WeaponSocket(TEXT("hand_rSocket"));
+	//AGSWeapon* CurWeapon = GetWorld()->SpawnActor<AGSWeapon>(FVector::ZeroVector, FRotator::ZeroRotator);
+
+	//if (CurWeapon)
+	//{
+	//	CurWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+	//}
 }
 
 // Called every frame
@@ -134,6 +155,22 @@ float AGSCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEve
 	}
 
 	return FinalDamage;
+}
+
+bool AGSCharacter::CanSetWeapon()
+{
+	return pCurrentWeapon == nullptr;
+}
+
+void AGSCharacter::SetWeapon(class AGSWeapon* pNewWeapon)
+{
+	FName WeaponSocket(TEXT("hand_rSocket"));
+	if (pNewWeapon)
+	{
+		pNewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
+	}
+	pNewWeapon->SetOwner(this);
+	pCurrentWeapon = pNewWeapon;
 }
 
 void AGSCharacter::SetControlMode(EControlMode ControlMode)

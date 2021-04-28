@@ -28,6 +28,12 @@ public:
 	virtual void PostInitializeComponents() override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
+	bool CanSetWeapon();
+	void SetWeapon(class AGSWeapon* pNewWeapon);
+
+	UPROPERTY(VisibleAnywhere, Category = Weapon)
+		AGSWeapon* pCurrentWeapon;
+
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 		USpringArmComponent* pSpringArm;
 
@@ -67,6 +73,9 @@ private:
 
 	UFUNCTION()
 		void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	//UPROPERTY(VisibleAnywhere, Category = Weapon)
+	//	USkeletalMeshComponent* pWeapon;
 
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 		bool IsAttacking;
