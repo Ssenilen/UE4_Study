@@ -13,4 +13,4 @@ DECLARE_LOG_CATEGORY_EXTERN(UnrealStudy, Log, All);
 
 
 #define debugf(Format, ...) UE_LOG(UnrealStudy, Warning, TEXT("%s"), *FString::Printf(Format, ##__VA_ARGS__))
-#define checkf(Format, ...) { if(!Format) { GSLOG(Error, TEXT("Assertion: %s"), TEXT("'"#Format"'")); return __VA_ARGS__; }}
+//#define gscheckf(Format, ...) { if(!Format) { GSLOG(Error, TEXT("Assertion: %s"), TEXT("'"#Format"'")); return __VA_ARGS__; }}

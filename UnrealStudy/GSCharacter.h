@@ -40,6 +40,12 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 		UCameraComponent* pCamera;
 
+	UPROPERTY(VisibleAnywhere, Category = Stat)
+		class UGSCharacterStatComponent* pCharacterStat;
+
+	UPROPERTY(VisibleAnywhere, Category = UI)
+		class UWidgetComponent* pHPBarWidget;
+
 protected:
 	enum class EControlMode
 	{

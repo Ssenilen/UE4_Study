@@ -44,13 +44,13 @@ void UGSAnimInstance::JumpToAttackMontageSection(int32 NewSection)
 	if (IsDead)
 		return;
 
-	checkf(Montage_IsPlaying(AttackMontage));
+	checkf(Montage_IsPlaying(AttackMontage), TEXT("Error"));
 	Montage_JumpToSection(GetAttackMontageSelectionName(NewSection), AttackMontage);
 }
 
 FName UGSAnimInstance::GetAttackMontageSelectionName(int32 Section)
 {
-	checkf(FMath::IsWithinInclusive<int32>(Section, 1, 3), NAME_None);
+	checkf(FMath::IsWithinInclusive<int32>(Section, 1, 3), TEXT("Error"));
 	return FName(*FString::Printf(TEXT("Attack%d"), Section));
 }
 

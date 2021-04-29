@@ -3,8 +3,11 @@
 
 #include "GSCharacter.h"
 #include "GSAnimInstance.h"
+#include "GSCharacterStatComponent.h"
 #include "GSWeapon.h"
 #include "DrawDebugHelpers.h"
+#include "Components/WidgetComponent.h"
+#include "GSCharacterWidget.h"
 
 // Sets default values
 AGSCharacter::AGSCharacter()
@@ -14,14 +17,16 @@ AGSCharacter::AGSCharacter()
 
 	pSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPIRNGARM"));
 	pCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
+	pCharacterStat = CreateDefaultSubobject<UGSCharacterStatComponent>(TEXT("CHARACTERSTAT"));
+	pHPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBARWIDGET"));
 
 	pSpringArm->SetupAttachment(GetCapsuleComponent());
 	pCamera->SetupAttachment(pSpringArm);
+	pHPBarWidget->SetupAttachment(GetMesh());
 
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 	pSpringArm->TargetArmLength = 400.0f;
 	pSpringArm->SetRelativeRotation(FRotator(-15.0f, 0.0f, 0.0f));
-
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_CARDBOARD(TEXT("/Game/InfinityBladeWarriors/Character/CompleteCharacters/SK_CharM_Cardboard.SK_CharM_Cardboard"));
 	if (SK_CARDBOARD.Succeeded())
 	{
@@ -35,6 +40,15 @@ AGSCharacter::AGSCharacter()
 		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 	}
 
+	// TODO: SetWidgetClass가 BeginPlay 이전에 동작하지 않는다..ㅋㅋㅋㅋ
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
+	if (UI_HUD.Succeeded())
+	{
+		pHPBarWidget->SetWidgetClass(UI_HUD.Class);
+		pHPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
+	}
+
+
 	//FName WeaponSocket(TEXT("hand_rSocket"));
 	//if (GetMesh()->DoesSocketExist(WeaponSocket))
 	//{
@@ -47,6 +61,9 @@ AGSCharacter::AGSCharacter()
 
 	//	pWeapon->SetupAttachment(GetMesh(), WeaponSocket);
 	//}
+
+	pHPBarWidget->SetRelativeLocation(FVector(0.0f, 0.0f, 180.0f));
+	pHPBarWidget->SetWidgetSpace(EWidgetSpace::Screen); // 항상 스크린을 향해 바라보도록 
 
 	ArmLengthSpeed = 3.0f;
 	ArmRotationSpeed = 10.0f;
@@ -122,7 +139,7 @@ void AGSCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	AnimInstance = Cast<UGSAnimInstance>(GetMesh()->GetAnimInstance());
-	checkf(AnimInstance);
+	checkf(AnimInstance, TEXT("Error"));
 	
 	if (AnimInstance)
 	{
@@ -139,20 +156,26 @@ void AGSCharacter::PostInitializeComponents()
 		});
 	}
 
+	pCharacterStat->OnHPIsZero.AddLambda([this]() {
+		AnimInstance->SetDeadAnim();
+		SetActorEnableCollision(false);
+	});
+
 	AnimInstance->OnAttackHitCheck.AddUObject(this, &AGSCharacter::AttackCheck);
+
+	UGSCharacterWidget* CharacterWidget = Cast<UGSCharacterWidget>(pHPBarWidget->GetUserWidgetObject());
+	if (CharacterWidget)
+	{
+		CharacterWidget->BindCharacterStat(pCharacterStat);
+	}
 }
 
 float AGSCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	debugf(TEXT("Actor %s took Damage: %f"), *GetName(), FinalDamage);
-
-	if (FinalDamage > 0.0f)
-	{
-		AnimInstance->SetDeadAnim();
-		SetActorEnableCollision(false);
-	}
+	pCharacterStat->SetDamage(FinalDamage);
+	debugf(TEXT("Actor %s took Damage: %f ... CurrentHP: %f"), *GetName(), FinalDamage, pCharacterStat->GetCurrentHp());
 
 	return FinalDamage;
 }
@@ -282,7 +305,7 @@ void AGSCharacter::Attack()
 	}
 	else
 	{
-		checkf(CurrentCombo == 0);
+		checkf(CurrentCombo == 0, TEXT("Error"));
 		AttackStartComboState();
 		AnimInstance->PlayAttackMontage();
 		AnimInstance->JumpToAttackMontageSection(CurrentCombo);
@@ -328,7 +351,7 @@ void AGSCharacter::AttackCheck()
 			debugf(TEXT("Hit Success!"));
 
 			FDamageEvent DamageEvent;
-			HitResult.Actor->TakeDamage(50.0f, DamageEvent, GetController(), this);
+			HitResult.Actor->TakeDamage(pCharacterStat->GetAttack(), DamageEvent, GetController(), this);
 		}
 	}
 }
@@ -337,7 +360,7 @@ void AGSCharacter::AttackStartComboState()
 {
 	CanNextCombo = true;
 	IsComboInputOn = false;
-	checkf(FMath::IsWithinInclusive<int32>(CurrentCombo, 0, MaxCombo - 1));
+	checkf(FMath::IsWithinInclusive<int32>(CurrentCombo, 0, MaxCombo - 1), TEXT("Error"));
 	CurrentCombo = FMath::Clamp<int32>(CurrentCombo + 1, 1, MaxCombo);
 }
 
@@ -350,7 +373,7 @@ void AGSCharacter::AttackEndComboState()
 
 void AGSCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	checkf(IsAttacking && CurrentCombo > 0);
+	checkf(IsAttacking && CurrentCombo > 0, TEXT("Error"));
 	IsAttacking = false;
 	AttackEndComboState();
 }
