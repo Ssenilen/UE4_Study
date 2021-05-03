@@ -41,12 +41,12 @@ AGSCharacter::AGSCharacter()
 	}
 
 	// TODO: SetWidgetClass가 BeginPlay 이전에 동작하지 않는다..ㅋㅋㅋㅋ
-	static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
-	if (UI_HUD.Succeeded())
-	{
-		pHPBarWidget->SetWidgetClass(UI_HUD.Class);
-		pHPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
-	}
+	//static ConstructorHelpers::FClassFinder<UUserWidget> UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
+	//if (UI_HUD.Succeeded())
+	//{
+	//	pHPBarWidget->SetWidgetClass(UI_HUD.Class);
+	//	pHPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
+	//}
 
 
 	//FName WeaponSocket(TEXT("hand_rSocket"));
@@ -95,6 +95,20 @@ void AGSCharacter::BeginPlay()
 	//{
 	//	CurWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponSocket);
 	//}
+
+	TSubclassOf<UUserWidget> pWidget;
+	pWidget = LoadClass<UUserWidget>(NULL, TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
+	if (pWidget)
+	{
+		pHPBarWidget->SetWidgetClass(pWidget);
+		pHPBarWidget->SetDrawSize(FVector2D(150.0f, 50.0f));
+	}
+
+	UGSCharacterWidget* CharacterWidget = Cast<UGSCharacterWidget>(pHPBarWidget->GetUserWidgetObject());
+	if (CharacterWidget)
+	{
+		CharacterWidget->BindCharacterStat(pCharacterStat);
+	}
 }
 
 // Called every frame
@@ -162,12 +176,6 @@ void AGSCharacter::PostInitializeComponents()
 	});
 
 	AnimInstance->OnAttackHitCheck.AddUObject(this, &AGSCharacter::AttackCheck);
-
-	UGSCharacterWidget* CharacterWidget = Cast<UGSCharacterWidget>(pHPBarWidget->GetUserWidgetObject());
-	if (CharacterWidget)
-	{
-		CharacterWidget->BindCharacterStat(pCharacterStat);
-	}
 }
 
 float AGSCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
