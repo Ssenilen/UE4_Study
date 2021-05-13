@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "Components/WidgetComponent.h"
 #include "GSCharacterWidget.h"
+#include "GSAIController.h"
 
 // Sets default values
 AGSCharacter::AGSCharacter()
@@ -81,6 +82,9 @@ AGSCharacter::AGSCharacter()
 
 	AttackRange = 200.0f;
 	AttackRadius = 50.0f;
+
+	AIControllerClass = AGSAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called when the game starts or when spawned
