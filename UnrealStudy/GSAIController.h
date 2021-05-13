@@ -18,11 +18,15 @@ class UNREALSTUDY_API AGSAIController : public AAIController
 public:
 	AGSAIController();
 	virtual void OnPossess(APawn* InPawn) override;
-	virtual void OnUnPossess() override;
+
+	static const FName HomePosKey;
+	static const FName PatrolPosKey;
+	static const FName TargetKey;
 
 private:
-	void OnRepeatTimer();
+	UPROPERTY()
+		class UBehaviorTree* BTAsset;
 
-	FTimerHandle RepeatTimerHandle;
-	float RepeatInterval;
+	UPROPERTY()
+		class UBlackboardData* BBAsset;
 };

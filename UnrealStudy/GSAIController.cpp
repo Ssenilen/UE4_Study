@@ -3,39 +3,39 @@
 
 #include "GSAIController.h"
 #include "NavigationSystem.h"
-#include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardData.h"
+#include "BehaviorTree/BlackboardComponent.h"
+
+const FName AGSAIController::HomePosKey(TEXT("HomePos"));
+const FName AGSAIController::PatrolPosKey(TEXT("PatrolPos"));
+const FName AGSAIController::TargetKey(TEXT("Target"));
 
 AGSAIController::AGSAIController()
 {
-	RepeatInterval = 3.0f;
+	static ConstructorHelpers::FObjectFinder<UBlackboardData> BBObject(TEXT("/Game/Book/AI/BB_GSCharacter.BB_GSCharacter"));
+	if (BBObject.Succeeded())
+	{
+		BBAsset = BBObject.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UBehaviorTree> BTObject(TEXT("/Game/Book/AI/BT_GSCharacter.BT_GSCharacter"));
+	if (BTObject.Succeeded())
+	{
+		BTAsset = BTObject.Object;
+	}
 }
 
 void AGSAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-
-	GetWorld()->GetTimerManager().SetTimer(RepeatTimerHandle, this, &AGSAIController::OnRepeatTimer, RepeatInterval, true);
-}
-
-void AGSAIController::OnUnPossess()
-{
-	Super::OnUnPossess();
-	GetWorld()->GetTimerManager().ClearTimer(RepeatTimerHandle);
-}
-
-void AGSAIController::OnRepeatTimer()
-{
-	APawn* CurrentPawn = GetPawn();
-	check(CurrentPawn);
-
-	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetNavigationSystem(GetWorld());
-
-	if (NavSystem == nullptr) return;
-
-	FNavLocation NextLocation;
-	if (NavSystem->GetRandomPointInNavigableRadius(FVector::ZeroVector, 500.0f, NextLocation))
+	
+	if (UseBlackboard(BBAsset, Blackboard))
 	{
-		UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, NextLocation.Location);
-		debugf(TEXT("Next Location: %s"), *NextLocation.Location.ToString());
+		Blackboard->SetValueAsVector(HomePosKey, InPawn->GetActorLocation());
+		if (!RunBehaviorTree(BTAsset))
+		{
+			debugf(TEXT("AIController couldn't run behavior tree!"));
+		}
 	}
 }
