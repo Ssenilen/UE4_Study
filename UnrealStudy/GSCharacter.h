@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "GSCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndDelegate);
+
 UCLASS()
 class UNREALSTUDY_API AGSCharacter : public ACharacter
 {
@@ -47,6 +49,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = UI)
 		class UWidgetComponent* pHPBarWidget;
 
+	void Attack();
+	FOnAttackEndDelegate OnAttackEnd;
+
 protected:
 	enum class EControlMode
 	{
@@ -73,7 +78,6 @@ private:
 	void Turn(float NewAxisValue);
 
 	void ViewChange();
-	void Attack();
 	void AttackCheck();
 
 	void AttackStartComboState();

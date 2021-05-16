@@ -271,8 +271,8 @@ void AGSCharacter::SetControlMode(EControlMode ControlMode)
 	else if (ControlMode == EControlMode::NPC)
 	{
 		bUseControllerRotationYaw = true;
-		GetCharacterMovement()->bOrientRotationToMovement = false;
-		GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		GetCharacterMovement()->bOrientRotationToMovement = true;
+		GetCharacterMovement()->bUseControllerDesiredRotation = false;
 		GetCharacterMovement()->RotationRate = FRotator(0.0f, 480.0f, 0.0f);
 	}
 }
@@ -411,6 +411,7 @@ void AGSCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted
 	checkf(IsAttacking && CurrentCombo > 0, TEXT("Error"));
 	IsAttacking = false;
 	AttackEndComboState();
+	OnAttackEnd.Broadcast();
 }
 
 
