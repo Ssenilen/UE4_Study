@@ -9,6 +9,6 @@ public class UnrealStudyEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.Add("UnrealStudy");
+		ExtraModuleNames.AddRange(new string[] { "UnrealStudy", "ArenaBattleSetting" });
 	}
 }

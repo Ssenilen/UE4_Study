@@ -9,6 +9,8 @@
 #include "Components/WidgetComponent.h"
 #include "GSCharacterWidget.h"
 #include "GSAIController.h"
+#include "GSCharacterSetting.h"
+#include "GSGameInstance.h"
 
 // Sets default values
 AGSCharacter::AGSCharacter()
@@ -85,6 +87,15 @@ AGSCharacter::AGSCharacter()
 
 	AIControllerClass = AGSAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	const UGSCharacterSetting* DefaultSetting = GetDefault<UGSCharacterSetting>();
+	if (DefaultSetting && DefaultSetting->CharacterAssets.Num() > 0)
+	{
+		for (auto CharacterAsset : DefaultSetting->CharacterAssets)
+		{
+			debugf(TEXT("Character Asset: %s"), *CharacterAsset.ToString());
+		}
+	}
 }
 
 // Called when the game starts or when spawned
@@ -112,6 +123,19 @@ void AGSCharacter::BeginPlay()
 	if (CharacterWidget)
 	{
 		CharacterWidget->BindCharacterStat(pCharacterStat);
+	}
+
+	if (!IsPlayerControlled())
+	{
+		const UGSCharacterSetting* DefaultSetting = GetDefault<UGSCharacterSetting>();
+		int32 RandIndex = FMath::RandRange(0, DefaultSetting->CharacterAssets.Num() - 1);
+
+		CharacterAssetToLoad = DefaultSetting->CharacterAssets[RandIndex];
+		UGSGameInstance* GSGameInstance = Cast<UGSGameInstance>(GetGameInstance());
+		if (nullptr != GSGameInstance)
+		{
+			AssetStreamingHandle = GSGameInstance->StreamableManager.RequestAsyncLoad(CharacterAssetToLoad, FStreamableDelegate::CreateUObject(this, &AGSCharacter::OnAssetLoadCompleted));
+		}
 	}
 }
 
@@ -404,6 +428,17 @@ void AGSCharacter::AttackEndComboState()
 	CanNextCombo = false;
 	IsComboInputOn = false;
 	CurrentCombo = 0;
+}
+
+void AGSCharacter::OnAssetLoadCompleted()
+{
+	AssetStreamingHandle->ReleaseHandle();
+
+	TSoftObjectPtr<USkeletalMesh> LoadedAssetPath(CharacterAssetToLoad);
+	if (LoadedAssetPath.IsValid())
+	{
+		GetMesh()->SetSkeletalMesh(LoadedAssetPath.Get());
+	}
 }
 
 void AGSCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)

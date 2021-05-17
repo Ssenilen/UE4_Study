@@ -5,6 +5,7 @@
 #include "UnrealStudy.h"
 #include "Engine/DataTable.h"
 #include "Engine/GameInstance.h"
+#include "Engine/StreamableManager.h"
 #include "GSGameInstance.generated.h"
 
 /**
@@ -45,6 +46,8 @@ public:
 
 	virtual void Init() override;
 	FGSCharacterData* GetCharacterData(int32 level);
+
+	FStreamableManager StreamableManager;
 
 private:
 	UPROPERTY()
